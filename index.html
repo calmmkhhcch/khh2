@@ -1,0 +1,748 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高雄機務作業對照表 (完整版)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif; line-height: 1.5; color: #333; background-color: #f0f4f8; padding: 15px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        
+        /* 時間專區樣式 */
+        .time-section { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .time-section h2 { font-size: 20px; margin-bottom: 10px; text-align: center; color: #ecf0f1; }
+        .time-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 10px; 
+        }
+        .time-item { 
+            background: rgba(255, 255, 255, 0.1); 
+            padding: 10px; 
+            border-radius: 5px; 
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+        .time-label { font-size: 12px; opacity: 0.8; margin-bottom: 5px; }
+        .time-value { font-size: 14px; font-weight: bold; color: #3498db; }
+        
+        /* 天氣地震資訊專區樣式 */
+        .weather-section { background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .weather-section h2 { font-size: 20px; margin-bottom: 10px; text-align: center; color: #ecf0f1; }
+        
+        .header { background: linear-gradient(135deg, #1a5fb4, #0d3b66); color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 26px; margin-bottom: 5px; }
+        .header .subtitle { font-size: 14px; opacity: 0.9; }
+        .table-container { 
+            overflow-x: auto; 
+            padding: 0 10px;
+            position: relative;
+        }
+        .comparison-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 1250px; 
+            font-size: 14px; 
+            position: relative;
+        }
+        .comparison-table th { 
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
+            border-bottom: none; 
+            vertical-align: top; 
+        }
+        /* 左側固定表頭 */
+        .comparison-table th:first-child { 
+            position: sticky; 
+            left: 0;
+            z-index: 100;
+            background-color: #f0f7ff; 
+            width: 200px;
+            border-right: 2px solid #f0f7ff !important;
+        }
+        /* 左側固定內容格 */
+        .comparison-table td:first-child { 
+            position: sticky; 
+            left: 0;
+            z-index: 50;
+            background-color: white;
+            font-weight: bold; 
+            color: #1a5fb4;
+            width: 200px;
+            border-right: 2px solid white !important;
+        }
+        .comparison-table tbody td {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .comparison-table th, .comparison-table td { 
+            padding: 12px 8px; 
+            text-align: left; 
+            vertical-align: top; 
+        }
+        .airline-header { color: white; text-align: center; padding: 12px 5px; border-radius: 5px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; }
+        .airline-code { display: block; font-size: 12px; opacity: 0.9; margin-top: 3px; font-weight: normal; }
+        .airline-name { font-weight: bold; font-size: 15px; }
+        .category-header { background-color: #e6f2ff; font-weight: bold; color: #0d3b66; border-left: 4px solid #1a5fb4; padding-left: 15px !important; }
+        .notes-cell { background-color: #f8f9fa; line-height: 1.6; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-right: 5px; margin-bottom: 3px; background-color: #e9ecef; color: #495057; }
+        .badge.airbus { background-color: #d1ecf1; color: #0c5460; }
+        .badge.boeing { background-color: #f8d7da; color: #721c24; }
+        .highlight-box { background-color: #fff9e6; border-left: 3px solid #ffc107; padding: 8px; margin-top: 5px; border-radius: 0 3px 3px 0; }
+        
+        @media (max-width: 768px) { 
+            .container { border-radius: 0; } 
+            .header { padding: 15px; } 
+            .header h1 { font-size: 22px; }
+            .time-grid { grid-template-columns: 1fr; }
+            .table-container {
+                padding: 0;
+                overflow-x: scroll;
+                -webkit-overflow-scrolling: touch;
+            }
+            .comparison-table th:first-child,
+            .comparison-table td:first-child {
+                left: 0;
+                width: 180px;
+                border-right: 2px solid #f0f7ff !important;
+                box-shadow: 2px 0 0 0 #f0f7ff, 3px 0 0 0 #f0f7ff;
+            }
+            .comparison-table td:first-child {
+                border-right: 2px solid white !important;
+                box-shadow: 2px 0 0 0 white, 3px 0 0 0 white;
+            }
+            .comparison-table th:first-child::after,
+            .comparison-table td:first-child::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: -3px;
+                width: 3px;
+                height: 100%;
+                background: inherit;
+                z-index: 101;
+            }
+            .comparison-table td:first-child::after {
+                background: white;
+                z-index: 51;
+            }
+            .table-container::-webkit-scrollbar {
+                height: 8px;
+            }
+            .table-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+            .table-container::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+        }
+        
+        @media (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
+            .comparison-table th:first-child,
+            .comparison-table td:first-child {
+                transform: translateX(0.5px);
+            }
+        }
+        
+        .date-calculator-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        
+        .date-calculator-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .date-calculator-row input[type="date"] {
+            flex: 1;
+            padding: 4px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            font-size: 12px;
+        }
+        
+        .date-calculator-row input[type="number"] {
+            width: 70px;
+            padding: 4px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .date-calculator-row .days-label {
+            font-size: 12px;
+            color: #ecf0f1;
+            white-space: nowrap;
+        }
+        
+        .date-calculator-result {
+            margin-top: 5px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #2ecc71;
+            min-height: 20px;
+        }
+        
+        .operation-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .operation-btn {
+            flex: 1;
+            padding: 6px 0;
+            border: 1px solid #3498db;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .operation-btn.active {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        
+        .operation-btn:hover {
+            background-color: #3a506b;
+        }
+        
+        .operation-btn.active:hover {
+            background-color: #2980b9;
+        }
+        
+        .days-input-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .kg-bold {
+            color: #ff0000 !important;
+            font-weight: bold !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 時間專區 -->
+        <div class="time-section">
+            <h2>時間專區</h2>
+            <div class="time-grid">
+                <div class="time-item">
+                    <div class="time-label">現在台灣時間</div>
+                    <div class="time-value" id="local-time">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">UTC 時間</div>
+                    <div class="time-value" id="utc-time">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">虎航 UTC</div>
+                    <div class="time-value" id="tigerair-utc">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">越南航空 UTC</div>
+                    <div class="time-value" id="vietnamairlines-utc">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">CAT B (3天後)</div>
+                    <div class="time-value" id="cat-b">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">CAT C (10天後)</div>
+                    <div class="time-value" id="cat-c">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">CAT D (120天後)</div>
+                    <div class="time-value" id="cat-d">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">180天後</div>
+                    <div class="time-value" id="180-days">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">CAT III AUTOLAND (28天後)</div>
+                    <div class="time-value" id="cat-iii-autoland">載入中...</div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">CAT III AUTOLAND倒推</div>
+                    <div class="time-value">
+                        <input type="date" id="input-date" style="width: 100%; padding: 3px; border-radius: 3px; border: 1px solid #ccc;">
+                        <div id="reverse-result" style="margin-top: 5px; font-size: 12px;">輸入日期計算</div>
+                    </div>
+                </div>
+                <div class="time-item">
+                    <div class="time-label">自訂日期加減計算</div>
+                    <div class="time-value">
+                        <div class="date-calculator-container">
+                            <div class="date-calculator-row">
+                                <input type="date" id="custom-date-input" style="width: 100%; padding: 3px; border-radius: 3px; border: 1px solid #ccc;">
+                            </div>
+                            <div class="operation-buttons">
+                                <button id="add-btn" class="operation-btn active" data-operation="add">加 (+)</button>
+                                <button id="subtract-btn" class="operation-btn" data-operation="subtract">減 (-)</button>
+                            </div>
+                            <div class="date-calculator-row">
+                                <div class="days-input-container">
+                                    <input type="number" id="days-offset" value="0" min="0" max="365" style="width: 70px; padding: 3px; border-radius: 3px; border: 1px solid #ccc;">
+                                    <span class="days-label">天</span>
+                                </div>
+                                <button onclick="calculateCustomDate()" style="padding: 3px 8px; background-color: #3498db; color: white; border: none; border-radius: 3px; font-size: 12px; cursor: pointer; flex: 1;">計算</button>
+                            </div>
+                            <div id="custom-date-result" class="date-calculator-result">結果將顯示在這裡</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 天氣與地震資訊專區 -->
+        <div class="weather-section">
+            <h2>天氣與地震資訊</h2>
+            <div class="time-grid">
+                <div class="time-item" style="align-items: center; justify-content: center; cursor: pointer;" onclick="window.open('https://www.cwa.gov.tw/V8/C/L/Airport/Airport.html?PID=Q002', '_blank');">
+                    <div style="font-size: 28px; margin-bottom: 8px;">🛫</div>
+                    <div class="time-label">小港機場天氣</div>
+                    <div class="time-value" id="current-weather">載入中...</div>
+                    <div style="font-size: 12px; margin-top: 5px; color: #a9dfbf;">點擊查看詳細機場天氣預報</div>
+                </div>
+                <div class="time-item" style="align-items: center; justify-content: center; cursor: pointer;" onclick="window.open('https://www.cwa.gov.tw/V8/C/E/index.html', '_blank');">
+                    <div style="font-size: 28px; margin-bottom: 8px;">🌍</div>
+                    <div class="time-label">最近地震報告</div>
+                    <div class="time-value">中央氣象署</div>
+                    <div style="font-size: 12px; margin-top: 5px; color: #a9dfbf;">點擊查看即時地震資訊</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header">
+            <h1>高雄機務作業對照表</h1>
+            <div class="subtitle">各航空公司機務作業規範快速對照</div>
+        </div>
+        <div class="table-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th width="200" style="background-color: #1a1a1a;">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #E08D3C, #b8731a);">
+                                <div class="airline-name">虎航</div>
+                                <div class="airline-code">IT</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #046C84, #034c5f);">
+                                <div class="airline-name">越南航空</div>
+                                <div class="airline-code">VN</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #003284, #001f52);">
+                                <div class="airline-name">南方航空</div>
+                                <div class="airline-code">CZ / CSN</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #cc0000, #990000);">
+                                <div class="airline-name">CES東方</div>
+                                <div class="airline-code">CES/MU</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #009344, #007233);">
+                                <div class="airline-name">廈門航空</div>
+                                <div class="airline-code">MF</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #002244, #001122);">
+                                <div class="airline-name">美聯航空</div>
+                                <div class="airline-code">UA</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #ff6600, #cc5200);">
+                                <div class="airline-name">德威航空</div>
+                                <div class="airline-code">TW</div>
+                            </div>
+                        </th>
+                        <th width="200">
+                            <div class="airline-header" style="background: linear-gradient(135deg, #ed1c24, #bd0008);">
+                                <div class="airline-name">濟州航空</div>
+                                <div class="airline-code">7C</div>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="category-header">機型</td>
+                        <td><span class="badge airbus">A320(V2500/NEO)</span><span class="badge airbus">A321(V2500/NEO)</span></td>
+                        <td>-</td>
+                        <td><span class="badge boeing">738</span></td>
+                        <td><span class="badge boeing">738</span><span class="badge airbus">320</span></td>
+                        <td><span class="badge boeing">738</span></td>
+                        <td><span class="badge boeing">738</span></td>
+                        <td><span class="badge boeing">738</span></td>
+                        <td><span class="badge boeing">738</span></td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">工單</td>
+                        <td>PF/TS 有分不同機型<br>CEO(B50001~B50019)<br>NEO(B-50021~B-50029)</td>
+                        <td>紙本TLB</td>
+                        <td>紙本工單/紙本TLB</td>
+                        <td>紙本工單/電子TLB</td>
+                        <td>紙本工單/紙本TLB</td>
+                        <td>電子式</td>
+                        <td>紙本工單/紙本TLB</td>
+                        <td>紙本工單/紙本TLB</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">工單簽名</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>無</td>
+                        <td>B1.1</td>
+                        <td>B1.1</td>
+                        <td>B1.1</td>
+                        <td>B1.1</td>
+                        <td>B1.1</td>
+                        <td>B1.1</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">360檢查責任</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                        <td>B1.1 / M1/ M0</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">油車</td>
+                        <td>中油 頻道05<br>自己叫油車</td>
+                        <td>台朔 頻道06<br>自己叫油車</td>
+                        <td>台朔 頻道06</td>
+                        <td>台朔 頻道06</td>
+                        <td>台朔 頻道06</td>
+                        <td>中油 頻道05</td>
+                        <td>台朔 頻道06</td>
+                        <td>台朔 頻道06</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">誰加油</td>
+                        <td>機務加油簽名</td>
+                        <td>機務加油簽名</td>
+                        <td>機長加油簽名</td>
+                        <td>機長加油簽名</td>
+                        <td>機長加油簽名</td>
+                        <td>機務加油簽名</td>
+                        <td>機務加油/機長簽名</td>
+                        <td>機務加油/機長簽名</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">油單</td>
+                        <td>1張給機長 / 1張機務帶回</td>
+                        <td>一張給機長,一張走到空橋旅客登機處拿上去給越南代表</td>
+                        <td>1張給機長 / 1張機務帶回</td>
+                        <td>1張給機長 / 1張給東航代表</td>
+                        <td>-</td>
+                        <td>1張給機長 1張給長榮運務<br>2張油單給長榮運務<br>華航機務拍照(完工MK用)</td>
+                        <td>1張給機長 1張機務帶回</td>
+                        <td>3張油單(1張給機長,一張給運務,一張給機務)</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">加油單位</td>
+                        <td>LBS</td>
+                        <td><span class="kg-bold">KG</span></td>
+                        <td><span class="kg-bold">KG</span></td>
+                        <td><span class="kg-bold">KG</span></td>
+                        <td><span class="kg-bold">KG</span></td>
+                        <td>LBS</td>
+                        <td><span class="kg-bold">KG</span></td>
+                        <td><span class="kg-bold">KG</span></td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">離機帶走文件</td>
+                        <td>1.TLB 黃單<br>2.紙本油單(粉紅色)</td>
+                        <td>TLB 藍單</td>
+                        <td>TLB 藍單 (NML就可以撕掉，不用等教官簽)</td>
+                        <td>電子化不用撕本子</td>
+                        <td>一張TLB黃,一張油單收據<br>(白色的正本要留給台朔)</td>
+                        <td>無</td>
+                        <td>一張TLB(白色),一張油單收據<br>(白色的正本要留給台朔)</td>
+                        <td>一張TLB(藍頁),一張油單收據<br>(白色的正本要留給台朔)</td>
+                    </tr>
+                    <tr>
+                        <td class="category-header">備註</td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            加完油在油單背面寫剩餘油量拿一張給教官
+                        </td>
+                        <!-- 越南航空備註：已刪除「越南油量計算」連結，保留v-tecnik工具 -->
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            <div class="highlight-box">1.加油先設9300KG,等代表給FINAL</div>
+                            <div class="highlight-box">2.中油給的紙本油單寫REQUST FUEL: ???? TOTAL : ???? BOWSER: ????</div>
+                            <div style="margin-top: 10px; font-size: 13px;">
+                                <strong>參考:</strong><br>
+                                <a href="https://v-tecnik.top/TOOLS" target="_blank" style="color: #046C84;">v-tecnik工具</a><br>
+                            </div>
+                        </td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            <div class="highlight-box">左邊:3800 其他加中間 右邊:3800</div>
+                            *可詢問前艙要不要排汙/加清(排EWASTE/加WATER)
+                        </td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            華航機務拍照(完工MK用)
+                        </td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            長榮接機 長榮送機 加完油跟教官拿一張油單 華航機務拍照(完工MK用)
+                        </td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            <div class="highlight-box">1.拖機前1L門安全簽封邀撕下收好，拖到後保固會跟我們索取</div>
+                            <div class="highlight-box">2.拖到定位跟外面長榮RC比OK,等他們從外面開門</div>
+                            <div class="highlight-box">3.授權人員RLS後,MRD由駕駛艙印出後就可以離開(會自動印出)</div>
+                        </td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            <div class="highlight-box">1.寫餘油</div>
+                            <div class="highlight-box">2.加完油教官簽字</div>
+                            <div class="highlight-box">3.左邊:3800 其他加中間 右邊:3800</div>
+                        </td>
+                        <td class="notes-cell">
+                            <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
+                            <div class="highlight-box">1.機長給油量 加油的弟兄跟授權班長說密度 (問油車)</div>
+                            <div class="highlight-box">2.左邊:3800 其他加中間 右邊:3800</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 工具連結區域 (已新增四項工具) -->
+        <div style="background: #f0f7ff; padding: 20px; margin: 20px; border-radius: 10px;">
+            <h3 style="color: #1a5fb4; margin-bottom: 15px; font-size: 18px;">實用工具連結</h3>
+            <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
+                <strong>每日人力：</strong>
+                <a href="https://calmmkhhcch.github.io/everydaymanpower/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                    https://calmmkhhcch.github.io/everydaymanpower/
+                </a>
+            </div>
+            <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
+                <strong>班表小助手：</strong>
+                <a href="https://calmmkhhcch.github.io/schedulecolor/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                    https://calmmkhhcch.github.io/schedulecolor/
+                </a>
+            </div>
+            <!-- 新增工具：越南TLB版加油計算器 -->
+            <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
+                <strong>越南TLB版加油計算器：</strong>
+                <a href="https://calmmkhhcch.github.io/vn2/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                    https://calmmkhhcch.github.io/vn2/
+                </a>
+            </div>
+            <!-- 新增工具：美聯航空UA 加油計算器 -->
+            <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
+                <strong>美聯航空UA 加油計算器：</strong>
+                <a href="https://calmmkhhcch.github.io/ua2/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                    https://calmmkhhcch.github.io/ua2/
+                </a>
+            </div>
+            <!-- 新增工具：A321紙本油單 -->
+            <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
+                <strong>A321紙本油單：</strong>
+                <a href="https://calmmkhhcch.github.io/paperfuelslip/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                    https://calmmkhhcch.github.io/paperfuelslip/
+                </a>
+            </div>
+            <!-- 新增工具：180 RENEW用 工作經歷篩選器 -->
+            <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
+                <strong>180 RENEW用 工作經歷篩選器：</strong>
+                <a href="https://calmmkhhcch.github.io/mechexperience/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                    https://calmmkhhcch.github.io/mechexperience/
+                </a>
+            </div>
+            
+            <!-- 華航專區 -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #1a5fb4;">
+                <h3 style="color: #cc0000; margin-bottom: 15px; font-size: 18px;">華航專區</h3>
+                <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
+                    <strong>EIP 華航首頁：</strong>
+                    <a href="https://eip.china-airlines.com/lportal/web/home/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                        https://eip.china-airlines.com/lportal/web/home/
+                    </a>
+                </div>
+                <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
+                    <strong>加班單申請：</strong>
+                    <a href="https://tpeehr05.china-airlines.com/overtime/OTSheetIndex.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                        https://tpeehr05.china-airlines.com/overtime/OTSheetIndex.aspx
+                    </a>
+                </div>
+                <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
+                    <strong>EAM 差勤：</strong>
+                    <a href="https://eam.china-airlines.com/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                        https://eam.china-airlines.com/
+                    </a>
+                </div>
+                <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
+                    <strong>ROS：</strong>
+                    <a href="https://rosc.china-airlines.com/Fr_login.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                        https://rosc.china-airlines.com/Fr_login.aspx
+                    </a>
+                </div>
+                <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
+                    <strong>TEAM +：</strong>
+                    <a href="https://eim.china-airlines.com/EIM/User/WallMain.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                        https://eim.china-airlines.com/EIM/User/WallMain.aspx
+                    </a>
+                </div>
+                <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
+                    <strong>員工機票：</strong>
+                    <a href="https://calcfec.china-airlines.com/StaffTicketWeb/et_main.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
+                        https://calcfec.china-airlines.com/StaffTicketWeb/et_main.aspx
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 時間專區功能
+        function updateTime() {
+            const now = new Date();
+            
+            const localTime = now.toLocaleTimeString('zh-TW');
+            document.getElementById('local-time').textContent = `${now.toLocaleDateString('zh-TW')} ${localTime}`;
+            
+            const utcTime = now.toUTCString().split(' ')[4];
+            document.getElementById('utc-time').textContent = utcTime;
+            
+            const tigerairDate = now.getUTCDate().toString().padStart(2, '0');
+            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const tigerairMonth = monthNames[now.getUTCMonth()];
+            const tigerairYear = now.getUTCFullYear();
+            const tigerairHours = now.getUTCHours().toString().padStart(2, '0');
+            const tigerairMinutes = now.getUTCMinutes().toString().padStart(2, '0');
+            const tigerairSeconds = now.getUTCSeconds().toString().padStart(2, '0');
+            document.getElementById('tigerair-utc').textContent = `${tigerairDate}/${tigerairMonth}/${tigerairYear} ${tigerairHours}:${tigerairMinutes}:${tigerairSeconds}`;
+            
+            const vietnamairlinesDate = now.getUTCDate().toString().padStart(2, '0');
+            const vietnamairlinesMonth = (now.getUTCMonth() + 1).toString().padStart(2, '0');
+            const vietnamairlinesYear = now.getUTCFullYear();
+            const vietnamairlinesHours = now.getUTCHours().toString().padStart(2, '0');
+            const vietnamairlinesMinutes = now.getUTCMinutes().toString().padStart(2, '0');
+            const vietnamairlinesSeconds = now.getUTCSeconds().toString().padStart(2, '0');
+            document.getElementById('vietnamairlines-utc').textContent = `${vietnamairlinesDate}/${vietnamairlinesMonth}/${vietnamairlinesYear} ${vietnamairlinesHours}:${vietnamairlinesMinutes}:${vietnamairlinesSeconds}`;
+            
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const weekday = weekdays[now.getDay()];
+            
+            const catBDate = new Date(now);
+            catBDate.setDate(catBDate.getDate() + 3);
+            document.getElementById('cat-b').textContent = `${catBDate.toLocaleDateString('zh-TW')} (週${weekdays[catBDate.getDay()]})`;
+            
+            const catCDate = new Date(now);
+            catCDate.setDate(catCDate.getDate() + 10);
+            document.getElementById('cat-c').textContent = `${catCDate.toLocaleDateString('zh-TW')} (週${weekdays[catCDate.getDay()]})`;
+            
+            const catDDate = new Date(now);
+            catDDate.setDate(catDDate.getDate() + 120);
+            document.getElementById('cat-d').textContent = `${catDDate.toLocaleDateString('zh-TW')} (週${weekdays[catDDate.getDay()]})`;
+            
+            const days180Date = new Date(now);
+            days180Date.setDate(days180Date.getDate() + 180);
+            document.getElementById('180-days').textContent = `${days180Date.toLocaleDateString('zh-TW')} (週${weekdays[days180Date.getDay()]})`;
+            
+            const catIIIDate = new Date(now);
+            catIIIDate.setDate(catIIIDate.getDate() + 28);
+            document.getElementById('cat-iii-autoland').textContent = `${catIIIDate.toLocaleDateString('zh-TW')} (週${weekdays[catIIIDate.getDay()]})`;
+        }
+        
+        function calculateReverseDate() {
+            const inputDate = document.getElementById('input-date').value;
+            if (!inputDate) return;
+            const selectedDate = new Date(inputDate);
+            const reverseDate = new Date(selectedDate);
+            reverseDate.setDate(reverseDate.getDate() - 28);
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            document.getElementById('reverse-result').textContent = 
+                `${reverseDate.toLocaleDateString('zh-TW')} (週${weekdays[reverseDate.getDay()]})`;
+        }
+        
+        function calculateCustomDate() {
+            const dateInput = document.getElementById('custom-date-input').value;
+            const daysOffset = parseInt(document.getElementById('days-offset').value) || 0;
+            const activeOperation = document.querySelector('.operation-btn.active').getAttribute('data-operation');
+            if (!dateInput) {
+                document.getElementById('custom-date-result').textContent = "請選擇日期";
+                document.getElementById('custom-date-result').style.color = "#e74c3c";
+                return;
+            }
+            const selectedDate = new Date(dateInput);
+            const resultDate = new Date(selectedDate);
+            if (activeOperation === 'add') {
+                resultDate.setDate(resultDate.getDate() + daysOffset);
+            } else {
+                resultDate.setDate(resultDate.getDate() - daysOffset);
+            }
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const dateString = resultDate.toLocaleDateString('zh-TW');
+            const weekday = weekdays[resultDate.getDay()];
+            const operationText = activeOperation === 'add' ? '加' : '減';
+            document.getElementById('custom-date-result').innerHTML = 
+                `<div>${operationText} ${daysOffset} 天後：</div>
+                 <div style="font-size: 14px; margin-top: 3px;">${dateString} (週${weekday})</div>`;
+            document.getElementById('custom-date-result').style.color = "#2ecc71";
+        }
+        
+        function updateWeather() {
+            const weatherConditions = ['☀️ 晴朗', '⛅ 多雲', '🌧️ 短暫陣雨', '☁️ 陰天'];
+            const temperatures = ['24°C / 20°C', '28°C / 18°C', '26°C / 18°C'];
+            const randomCondition = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+            const randomTemp = temperatures[Math.floor(Math.random() * temperatures.length)];
+            document.getElementById('current-weather').innerHTML = `<strong>${randomCondition}</strong><br>${randomTemp}`;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            setInterval(updateTime, 1000);
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('input-date').value = today;
+            calculateReverseDate();
+            document.getElementById('custom-date-input').value = today;
+            document.getElementById('input-date').addEventListener('change', calculateReverseDate);
+            document.querySelectorAll('.operation-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.operation-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            document.getElementById('days-offset').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') calculateCustomDate();
+            });
+            updateWeather();
+            setInterval(updateWeather, 600000);
+        });
+    </script>
+</body>
+</html>
