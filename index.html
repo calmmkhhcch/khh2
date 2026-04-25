@@ -14,7 +14,7 @@
         .time-section h2 { font-size: 20px; margin-bottom: 10px; text-align: center; color: #ecf0f1; }
         .time-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
             gap: 10px; 
         }
         .time-item { 
@@ -26,7 +26,7 @@
             flex-direction: column;
         }
         .time-label { font-size: 12px; opacity: 0.8; margin-bottom: 5px; }
-        .time-value { font-size: 14px; font-weight: bold; color: #3498db; }
+        .time-value { font-size: 14px; font-weight: bold; color: #3498db; word-break: break-word; }
         
         /* 天氣地震資訊專區樣式 */
         .weather-section { background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
@@ -92,6 +92,71 @@
         .badge.boeing { background-color: #f8d7da; color: #721c24; }
         .highlight-box { background-color: #fff9e6; border-left: 3px solid #ffc107; padding: 8px; margin-top: 5px; border-radius: 0 3px 3px 0; }
         
+        /* 時間加減計算器內部樣式 */
+        .time-calc-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .time-calc-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .time-calc-row label {
+            font-size: 12px;
+            opacity: 0.9;
+            white-space: nowrap;
+        }
+        .time-calc-input {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 4px;
+            padding: 4px 6px;
+            color: white;
+            font-size: 12px;
+            width: 100%;
+        }
+        .time-calc-input::placeholder {
+            color: #ddd;
+        }
+        .time-calc-input[type="datetime-local"] {
+            background: rgba(255,255,255,0.15);
+        }
+        .offset-buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+        .offset-btn {
+            background: #3498db;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .offset-btn.small {
+            padding: 2px 6px;
+            background: #2c3e50;
+        }
+        .offset-btn:hover {
+            background: #2980b9;
+        }
+        .result-time {
+            background: #00000033;
+            border-radius: 6px;
+            padding: 6px;
+            margin-top: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #f1c40f;
+        }
         @media (max-width: 768px) { 
             .container { border-radius: 0; } 
             .header { padding: 15px; } 
@@ -298,12 +363,42 @@
                             </div>
                             <div class="date-calculator-row">
                                 <div class="days-input-container">
-                                    <input type="number" id="days-offset" value="0" min="0" max="365" style="width: 70px; padding: 3px; border-radius: 3px; border: 1px solid #ccc;">
+                                    <input type="number" id="days-offset" value="0" min="0" max="365" step="1" style="width: 70px; padding: 3px; border-radius: 3px; border: 1px solid #ccc;">
                                     <span class="days-label">天</span>
                                 </div>
-                                <button onclick="calculateCustomDate()" style="padding: 3px 8px; background-color: #3498db; color: white; border: none; border-radius: 3px; font-size: 12px; cursor: pointer; flex: 1;">計算</button>
+                                <!-- 保留按鈕但改為輔助風格，使用者仍可按，但自動計算為主 -->
+                                <button id="calc-date-btn" style="padding: 3px 8px; background-color: #3498db; color: white; border: none; border-radius: 3px; font-size: 12px; cursor: pointer; flex: 1;">計算</button>
                             </div>
                             <div id="custom-date-result" class="date-calculator-result">結果將顯示在這裡</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 時間加減計算器 (小時/分鐘) -->
+                <div class="time-item">
+                    <div class="time-label">⏱️ 時間加減計算器</div>
+                    <div class="time-value">
+                        <div class="time-calc-control">
+                            <div class="time-calc-row">
+                                <label>基準時間</label>
+                                <input type="datetime-local" id="base-datetime" class="time-calc-input" style="background: rgba(255,255,255,0.2); color:white;">
+                            </div>
+                            <div class="time-calc-row">
+                                <button class="offset-btn small" data-quick-hours="-1">-1h</button>
+                                <button class="offset-btn small" data-quick-hours="1">+1h</button>
+                                <button class="offset-btn small" data-quick-minutes="-5">-5m</button>
+                                <button class="offset-btn small" data-quick-minutes="5">+5m</button>
+                                <button id="reset-base-time" class="offset-btn" style="background:#2c3e50;">🔄 現在</button>
+                            </div>
+                            <div class="time-calc-row">
+                                <label>偏移 ➕➖</label>
+                                <div style="display: flex; gap: 5px; flex:1;">
+                                    <input type="number" id="offset-hours" value="0" step="1" style="width:50px; background:rgba(255,255,255,0.15); border:1px solid #ccc; border-radius:3px; padding:4px; color:white; text-align:center;"> <span style="font-size:12px;">小時</span>
+                                    <input type="number" id="offset-minutes" value="0" step="5" style="width:50px; background:rgba(255,255,255,0.15); border:1px solid #ccc; border-radius:3px; padding:4px; color:white; text-align:center;"> <span style="font-size:12px;">分鐘</span>
+                                    <button id="apply-time-offset" class="offset-btn" style="background:#2ecc71;">計算</button>
+                                </div>
+                            </div>
+                            <div id="time-calc-result" class="result-time">等待計算...</div>
                         </div>
                     </div>
                 </div>
@@ -494,7 +589,6 @@
                             <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
                             加完油在油單背面寫剩餘油量拿一張給教官
                         </td>
-                        <!-- 越南航空備註 -->
                         <td class="notes-cell">
                             <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
                             <div class="highlight-box">1.加油先設9300KG,等代表給FINAL</div>
@@ -504,7 +598,6 @@
                                 <a href="https://v-tecnik.top/TOOLS" target="_blank" style="color: #046C84;">v-tecnik工具</a><br>
                             </div>
                         </td>
-                        <!-- 南方航空備註 (已修改) -->
                         <td class="notes-cell">
                             <div style="color: #ff0000; font-weight: bold; margin-bottom: 8px;">請先跟授權班長確認如何加油再開始加油</div>
                             <div class="highlight-box">左邊:3800 其他加中間 右邊:3800</div>
@@ -543,212 +636,224 @@
             </table>
         </div>
         
-        <!-- 工具連結區域 -->
+        <!-- 工具連結區域 (所有 calmmkhhcch 已改為 thankscal) -->
         <div style="background: #f0f7ff; padding: 20px; margin: 20px; border-radius: 10px;">
             <h3 style="color: #1a5fb4; margin-bottom: 15px; font-size: 18px;">實用工具連結</h3>
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>每日人力：</strong>
-                <a href="https://calmmkhhcch.github.io/everydaymanpower/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/everydaymanpower/
-                </a>
+                <a href="https://thankscal.github.io/everydaymanpower/" target="_blank" style="color: #1a5fb4; word-break: break-all;">https://thankscal.github.io/everydaymanpower/</a>
             </div>
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>班表小助手：</strong>
-                <a href="https://calmmkhhcch.github.io/schedulecolor/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/schedulecolor/
-                </a>
+                <a href="https://thankscal.github.io/schedulecolor/" target="_blank" style="color: #1a5fb4;">https://thankscal.github.io/schedulecolor/</a>
             </div>
-            <!-- 新增 航線修護本部 萬年輪班月曆 -->
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>航線修護本部 萬年輪班月曆：</strong>
-                <a href="https://calmmkhhcch.github.io/mlsheet/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/mlsheet/
-                </a>
+                <a href="https://thankscal.github.io/mlsheet/" target="_blank" style="color: #1a5fb4;">https://thankscal.github.io/mlsheet/</a>
             </div>
-            <!-- 新增 A320/737維修參考 -->
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>A320/737維修參考：</strong>
-                <a href="http://mobile.airlinetechs.com/index.html" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    http://mobile.airlinetechs.com/index.html
-                </a>
+                <a href="http://mobile.airlinetechs.com/index.html" target="_blank">http://mobile.airlinetechs.com/index.html</a>
             </div>
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>越南TLB版加油計算器：</strong>
-                <a href="https://calmmkhhcch.github.io/vn2/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/vn2/
-                </a>
+                <a href="https://thankscal.github.io/vn2/" target="_blank">https://thankscal.github.io/vn2/</a>
             </div>
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>美聯航空UA 加油計算器：</strong>
-                <a href="https://calmmkhhcch.github.io/ua2/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/ua2/
-                </a>
+                <a href="https://thankscal.github.io/ua2/" target="_blank">https://thankscal.github.io/ua2/</a>
             </div>
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>A321紙本油單：</strong>
-                <a href="https://calmmkhhcch.github.io/paperfuelslip/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/paperfuelslip/
-                </a>
+                <a href="https://thankscal.github.io/paperfuelslip/" target="_blank">https://thankscal.github.io/paperfuelslip/</a>
             </div>
             <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #1a5fb4;">
                 <strong>180 RENEW用 工作經歷篩選器：</strong>
-                <a href="https://calmmkhhcch.github.io/mechexperience/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                    https://calmmkhhcch.github.io/mechexperience/
-                </a>
+                <a href="https://thankscal.github.io/mechexperience/" target="_blank">https://thankscal.github.io/mechexperience/</a>
             </div>
             
-            <!-- 華航專區 -->
+            <!-- 華航專區 (不變) -->
             <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #1a5fb4;">
                 <h3 style="color: #cc0000; margin-bottom: 15px; font-size: 18px;">華航專區</h3>
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>EIP 華航首頁：</strong>
-                    <a href="https://eip.china-airlines.com/lportal/web/home/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://eip.china-airlines.com/lportal/web/home/
-                    </a>
+                    <strong>EIP 華航首頁：</strong> <a href="https://eip.china-airlines.com/lportal/web/home/" target="_blank">https://eip.china-airlines.com/lportal/web/home/</a>
                 </div>
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>加班單申請：</strong>
-                    <a href="https://tpeehr05.china-airlines.com/overtime/OTSheetIndex.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://tpeehr05.china-airlines.com/overtime/OTSheetIndex.aspx
-                    </a>
+                    <strong>加班單申請：</strong> <a href="https://tpeehr05.china-airlines.com/overtime/OTSheetIndex.aspx" target="_blank">https://tpeehr05.china-airlines.com/overtime/OTSheetIndex.aspx</a>
                 </div>
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>EAM 差勤：</strong>
-                    <a href="https://eam.china-airlines.com/" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://eam.china-airlines.com/
-                    </a>
+                    <strong>EAM 差勤：</strong> <a href="https://eam.china-airlines.com/" target="_blank">https://eam.china-airlines.com/</a>
                 </div>
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>ROS：</strong>
-                    <a href="https://rosc.china-airlines.com/Fr_login.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://rosc.china-airlines.com/Fr_login.aspx
-                    </a>
+                    <strong>ROS：</strong> <a href="https://rosc.china-airlines.com/Fr_login.aspx" target="_blank">https://rosc.china-airlines.com/Fr_login.aspx</a>
                 </div>
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>TEAM +：</strong>
-                    <a href="https://eim.china-airlines.com/EIM/User/WallMain.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://eim.china-airlines.com/EIM/User/WallMain.aspx
-                    </a>
+                    <strong>TEAM +：</strong> <a href="https://eim.china-airlines.com/EIM/User/WallMain.aspx" target="_blank">https://eim.china-airlines.com/EIM/User/WallMain.aspx</a>
                 </div>
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>員工機票：</strong>
-                    <a href="https://calcfec.china-airlines.com/StaffTicketWeb/et_main.aspx" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://calcfec.china-airlines.com/StaffTicketWeb/et_main.aspx
-                    </a>
+                    <strong>員工機票：</strong> <a href="https://calcfec.china-airlines.com/StaffTicketWeb/et_main.aspx" target="_blank">https://calcfec.china-airlines.com/StaffTicketWeb/et_main.aspx</a>
                 </div>
-                <!-- 新增 DBS 油單 -->
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>DBS 油單：</strong>
-                    <a href="https://hdqsocweb02.china-airlines.com/DBSweb/flt/brief/ofp" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://hdqsocweb02.china-airlines.com/DBSweb/flt/brief/ofp
-                    </a>
+                    <strong>DBS 油單：</strong> <a href="https://hdqsocweb02.china-airlines.com/DBSweb/flt/brief/ofp" target="_blank">https://hdqsocweb02.china-airlines.com/DBSweb/flt/brief/ofp</a>
                 </div>
-                <!-- 新增 ERP -->
                 <div style="margin-bottom: 12px; padding: 12px 15px; background: white; border-radius: 5px; border-left: 4px solid #cc0000;">
-                    <strong>ERP：</strong>
-                    <a href="https://maint.china-airlines.com/maintenix/common/security/login.jsp" target="_blank" style="color: #1a5fb4; word-break: break-all;">
-                        https://maint.china-airlines.com/maintenix/common/security/login.jsp
-                    </a>
+                    <strong>ERP：</strong> <a href="https://maint.china-airlines.com/maintenix/common/security/login.jsp" target="_blank">https://maint.china-airlines.com/maintenix/common/security/login.jsp</a>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 時間專區功能
+        // 時間專區基礎功能
         function updateTime() {
             const now = new Date();
-            
-            const localTime = now.toLocaleTimeString('zh-TW');
-            document.getElementById('local-time').textContent = `${now.toLocaleDateString('zh-TW')} ${localTime}`;
-            
+            document.getElementById('local-time').textContent = `${now.toLocaleDateString('zh-TW')} ${now.toLocaleTimeString('zh-TW')}`;
             const utcTime = now.toUTCString().split(' ')[4];
             document.getElementById('utc-time').textContent = utcTime;
-            
-            const tigerairDate = now.getUTCDate().toString().padStart(2, '0');
             const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-            const tigerairMonth = monthNames[now.getUTCMonth()];
-            const tigerairYear = now.getUTCFullYear();
-            const tigerairHours = now.getUTCHours().toString().padStart(2, '0');
-            const tigerairMinutes = now.getUTCMinutes().toString().padStart(2, '0');
-            const tigerairSeconds = now.getUTCSeconds().toString().padStart(2, '0');
-            document.getElementById('tigerair-utc').textContent = `${tigerairDate}/${tigerairMonth}/${tigerairYear} ${tigerairHours}:${tigerairMinutes}:${tigerairSeconds}`;
-            
-            const vietnamairlinesDate = now.getUTCDate().toString().padStart(2, '0');
-            const vietnamairlinesMonth = (now.getUTCMonth() + 1).toString().padStart(2, '0');
-            const vietnamairlinesYear = now.getUTCFullYear();
-            const vietnamairlinesHours = now.getUTCHours().toString().padStart(2, '0');
-            const vietnamairlinesMinutes = now.getUTCMinutes().toString().padStart(2, '0');
-            const vietnamairlinesSeconds = now.getUTCSeconds().toString().padStart(2, '0');
-            document.getElementById('vietnamairlines-utc').textContent = `${vietnamairlinesDate}/${vietnamairlinesMonth}/${vietnamairlinesYear} ${vietnamairlinesHours}:${vietnamairlinesMinutes}:${vietnamairlinesSeconds}`;
-            
+            const tigerairDate = now.getUTCDate().toString().padStart(2,'0');
+            document.getElementById('tigerair-utc').textContent = `${tigerairDate}/${monthNames[now.getUTCMonth()]}/${now.getUTCFullYear()} ${now.getUTCHours().toString().padStart(2,'0')}:${now.getUTCMinutes().toString().padStart(2,'0')}:${now.getUTCSeconds().toString().padStart(2,'0')}`;
+            const vnDate = now.getUTCDate().toString().padStart(2,'0');
+            document.getElementById('vietnamairlines-utc').textContent = `${vnDate}/${(now.getUTCMonth()+1).toString().padStart(2,'0')}/${now.getUTCFullYear()} ${now.getUTCHours().toString().padStart(2,'0')}:${now.getUTCMinutes().toString().padStart(2,'0')}:${now.getUTCSeconds().toString().padStart(2,'0')}`;
             const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-            const weekday = weekdays[now.getDay()];
-            
-            const catBDate = new Date(now);
-            catBDate.setDate(catBDate.getDate() + 3);
-            document.getElementById('cat-b').textContent = `${catBDate.toLocaleDateString('zh-TW')} (週${weekdays[catBDate.getDay()]})`;
-            
-            const catCDate = new Date(now);
-            catCDate.setDate(catCDate.getDate() + 10);
-            document.getElementById('cat-c').textContent = `${catCDate.toLocaleDateString('zh-TW')} (週${weekdays[catCDate.getDay()]})`;
-            
-            const catDDate = new Date(now);
-            catDDate.setDate(catDDate.getDate() + 120);
-            document.getElementById('cat-d').textContent = `${catDDate.toLocaleDateString('zh-TW')} (週${weekdays[catDDate.getDay()]})`;
-            
-            const days180Date = new Date(now);
-            days180Date.setDate(days180Date.getDate() + 180);
-            document.getElementById('180-days').textContent = `${days180Date.toLocaleDateString('zh-TW')} (週${weekdays[days180Date.getDay()]})`;
-            
-            const catIIIDate = new Date(now);
-            catIIIDate.setDate(catIIIDate.getDate() + 28);
-            document.getElementById('cat-iii-autoland').textContent = `${catIIIDate.toLocaleDateString('zh-TW')} (週${weekdays[catIIIDate.getDay()]})`;
+            const catB = new Date(now); catB.setDate(catB.getDate()+3); document.getElementById('cat-b').textContent = `${catB.toLocaleDateString('zh-TW')} (週${weekdays[catB.getDay()]})`;
+            const catC = new Date(now); catC.setDate(catC.getDate()+10); document.getElementById('cat-c').textContent = `${catC.toLocaleDateString('zh-TW')} (週${weekdays[catC.getDay()]})`;
+            const catD = new Date(now); catD.setDate(catD.getDate()+120); document.getElementById('cat-d').textContent = `${catD.toLocaleDateString('zh-TW')} (週${weekdays[catD.getDay()]})`;
+            const d180 = new Date(now); d180.setDate(d180.getDate()+180); document.getElementById('180-days').textContent = `${d180.toLocaleDateString('zh-TW')} (週${weekdays[d180.getDay()]})`;
+            const catIII = new Date(now); catIII.setDate(catIII.getDate()+28); document.getElementById('cat-iii-autoland').textContent = `${catIII.toLocaleDateString('zh-TW')} (週${weekdays[catIII.getDay()]})`;
         }
-        
         function calculateReverseDate() {
             const inputDate = document.getElementById('input-date').value;
-            if (!inputDate) return;
-            const selectedDate = new Date(inputDate);
-            const reverseDate = new Date(selectedDate);
-            reverseDate.setDate(reverseDate.getDate() - 28);
-            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-            document.getElementById('reverse-result').textContent = 
-                `${reverseDate.toLocaleDateString('zh-TW')} (週${weekdays[reverseDate.getDay()]})`;
+            if(!inputDate) return;
+            const selected = new Date(inputDate);
+            const rev = new Date(selected); rev.setDate(rev.getDate()-28);
+            const wd = ['日','一','二','三','四','五','六'];
+            document.getElementById('reverse-result').textContent = `${rev.toLocaleDateString('zh-TW')} (週${wd[rev.getDay()]})`;
         }
         
-        function calculateCustomDate() {
+        // 自訂日期加減計算 (核心函數)
+        function performCustomDateCalculation() {
             const dateInput = document.getElementById('custom-date-input').value;
-            const daysOffset = parseInt(document.getElementById('days-offset').value) || 0;
-            const activeOperation = document.querySelector('.operation-btn.active').getAttribute('data-operation');
-            if (!dateInput) {
-                document.getElementById('custom-date-result').textContent = "請選擇日期";
-                document.getElementById('custom-date-result').style.color = "#e74c3c";
-                return;
+            const days = parseInt(document.getElementById('days-offset').value) || 0;
+            const activeBtn = document.querySelector('.operation-btn.active');
+            const operation = activeBtn ? activeBtn.getAttribute('data-operation') : 'add';
+            if(!dateInput) { 
+                document.getElementById('custom-date-result').innerHTML = "請選擇日期";
+                return; 
             }
-            const selectedDate = new Date(dateInput);
-            const resultDate = new Date(selectedDate);
-            if (activeOperation === 'add') {
-                resultDate.setDate(resultDate.getDate() + daysOffset);
-            } else {
-                resultDate.setDate(resultDate.getDate() - daysOffset);
-            }
-            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-            const dateString = resultDate.toLocaleDateString('zh-TW');
-            const weekday = weekdays[resultDate.getDay()];
-            const operationText = activeOperation === 'add' ? '加' : '減';
-            document.getElementById('custom-date-result').innerHTML = 
-                `<div>${operationText} ${daysOffset} 天後：</div>
-                 <div style="font-size: 14px; margin-top: 3px;">${dateString} (週${weekday})</div>`;
-            document.getElementById('custom-date-result').style.color = "#2ecc71";
+            const base = new Date(dateInput);
+            const res = new Date(base);
+            if(operation === 'add') res.setDate(res.getDate() + days);
+            else res.setDate(res.getDate() - days);
+            const wd = ['日','一','二','三','四','五','六'];
+            document.getElementById('custom-date-result').innerHTML = `<div>${operation === 'add' ? '加' : '減'} ${days} 天後：</div><div style="font-size:14px; margin-top:3px;">${res.toLocaleDateString('zh-TW')} (週${wd[res.getDay()]})</div>`;
+        }
+        
+        // 監聽天數輸入、加減按鈕切換、日期變更 -> 自動計算
+        function bindAutoDateCalculation() {
+            const daysOffsetInput = document.getElementById('days-offset');
+            const customDateInput = document.getElementById('custom-date-input');
+            const addBtn = document.getElementById('add-btn');
+            const subtractBtn = document.getElementById('subtract-btn');
+            const manualCalcBtn = document.getElementById('calc-date-btn');
+            
+            const autoCalc = () => performCustomDateCalculation();
+            daysOffsetInput.addEventListener('input', autoCalc);
+            customDateInput.addEventListener('change', autoCalc);
+            addBtn.addEventListener('click', () => {
+                // 切換 active 樣式原本就在 DOMContentLoaded 中處理，但需重新觸發計算
+                setTimeout(autoCalc, 10);
+            });
+            subtractBtn.addEventListener('click', () => {
+                setTimeout(autoCalc, 10);
+            });
+            manualCalcBtn.addEventListener('click', autoCalc);
+            // 初始執行一次
+            autoCalc();
         }
         
         function updateWeather() {
-            const weatherConditions = ['☀️ 晴朗', '⛅ 多雲', '🌧️ 短暫陣雨', '☁️ 陰天'];
-            const temperatures = ['24°C / 20°C', '28°C / 18°C', '26°C / 18°C'];
-            const randomCondition = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
-            const randomTemp = temperatures[Math.floor(Math.random() * temperatures.length)];
-            document.getElementById('current-weather').innerHTML = `<strong>${randomCondition}</strong><br>${randomTemp}`;
+            const cond = ['☀️ 晴朗','⛅ 多雲','🌧️ 短暫陣雨','☁️ 陰天'];
+            const temp = ['24°C / 20°C','28°C / 18°C','26°C / 18°C'];
+            document.getElementById('current-weather').innerHTML = `<strong>${cond[Math.floor(Math.random()*cond.length)]}</strong><br>${temp[Math.floor(Math.random()*temp.length)]}`;
+        }
+        
+        // 時間加減計算器邏輯 (不變)
+        function initTimeCalculator() {
+            const baseInput = document.getElementById('base-datetime');
+            const hoursInput = document.getElementById('offset-hours');
+            const minutesInput = document.getElementById('offset-minutes');
+            const resultDiv = document.getElementById('time-calc-result');
+            const applyBtn = document.getElementById('apply-time-offset');
+            const resetBtn = document.getElementById('reset-base-time');
+            
+            function setNowToBase() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                baseInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                computeTimeOffset();
+            }
+            
+            function computeTimeOffset() {
+                let baseDate;
+                if (!baseInput.value) {
+                    setNowToBase();
+                    baseDate = new Date();
+                } else {
+                    baseDate = new Date(baseInput.value);
+                    if (isNaN(baseDate.getTime())) {
+                        resultDiv.textContent = "⚠️ 基準時間無效";
+                        return;
+                    }
+                }
+                const hourOffset = parseInt(hoursInput.value) || 0;
+                const minuteOffset = parseInt(minutesInput.value) || 0;
+                const totalMinutesOffset = hourOffset * 60 + minuteOffset;
+                const resultDate = new Date(baseDate.getTime() + totalMinutesOffset * 60 * 1000);
+                const year = resultDate.getFullYear();
+                const month = String(resultDate.getMonth() + 1).padStart(2,'0');
+                const day = String(resultDate.getDate()).padStart(2,'0');
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                const weekday = weekdays[resultDate.getDay()];
+                const hours24 = String(resultDate.getHours()).padStart(2,'0');
+                const minutes = String(resultDate.getMinutes()).padStart(2,'0');
+                resultDiv.innerHTML = `📅 ${year}/${month}/${day} (週${weekday}) ${hours24}:${minutes}<br><span style="font-size:11px;">基準 ${baseDate.toLocaleDateString()} ${baseDate.toLocaleTimeString()} 偏移 ${hourOffset}h ${minuteOffset}m</span>`;
+            }
+            
+            function quickAdjust(type, delta) {
+                if (type === 'hours') {
+                    let val = parseInt(hoursInput.value) || 0;
+                    hoursInput.value = val + delta;
+                } else if (type === 'minutes') {
+                    let val = parseInt(minutesInput.value) || 0;
+                    minutesInput.value = val + delta;
+                }
+                computeTimeOffset();
+            }
+            
+            applyBtn.addEventListener('click', computeTimeOffset);
+            resetBtn.addEventListener('click', () => { setNowToBase(); computeTimeOffset(); });
+            hoursInput.addEventListener('input', computeTimeOffset);
+            minutesInput.addEventListener('input', computeTimeOffset);
+            baseInput.addEventListener('change', computeTimeOffset);
+            
+            document.querySelectorAll('[data-quick-hours]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const delta = parseInt(btn.getAttribute('data-quick-hours'));
+                    quickAdjust('hours', delta);
+                });
+            });
+            document.querySelectorAll('[data-quick-minutes]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const delta = parseInt(btn.getAttribute('data-quick-minutes'));
+                    quickAdjust('minutes', delta);
+                });
+            });
+            setNowToBase();
         }
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -759,18 +864,23 @@
             calculateReverseDate();
             document.getElementById('custom-date-input').value = today;
             document.getElementById('input-date').addEventListener('change', calculateReverseDate);
-            document.querySelectorAll('.operation-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    document.querySelectorAll('.operation-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // 加減按鈕 active 切換 (保留原本樣式切換)
+            const opBtns = document.querySelectorAll('.operation-btn');
+            opBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    opBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
+                    // 切換後自動計算日期 (已在 bindAutoDateCalculation 中透過 setTimeout 觸發)
                 });
             });
-            document.getElementById('days-offset').addEventListener('keyup', function(event) {
-                if (event.key === 'Enter') calculateCustomDate();
-            });
+            // 初始化自動計算綁定
+            bindAutoDateCalculation();
+            
             updateWeather();
             setInterval(updateWeather, 600000);
+            initTimeCalculator();
         });
     </script>
 </body>
-</html>
+                            </html>
